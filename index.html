@@ -1,0 +1,242 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>常態分配與 Z 分數</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 單欄工作台——上方兩組參數卡並排，下方一張整合圖與比較結論 */
+:root{
+  --bg:#f5f6f3; --surface:#ffffff; --fg:#1d2321; --muted:#5f6a66; --line:#d9ddd8;
+  --a:#1f5f8b; --a-fill:rgba(31,95,139,.16);
+  --b:#b5651d; --b-fill:rgba(181,101,29,.16);
+  --display:"Noto Serif TC",serif; --body:"Noto Sans TC",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141917; --surface:#1c2220; --fg:#e7ebe8; --muted:#9aa5a0; --line:#2f3734;
+  --a:#6fb3e0; --a-fill:rgba(111,179,224,.2); --b:#e8a15c; --b-fill:rgba(232,161,92,.2); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141917; --surface:#1c2220; --fg:#e7ebe8; --muted:#9aa5a0; --line:#2f3734;
+  --a:#6fb3e0; --a-fill:rgba(111,179,224,.2); --b:#e8a15c; --b-fill:rgba(232,161,92,.2); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding-inline:16px;padding-block:28px 40px;display:grid;gap:20px}
+h1{font-family:var(--display);font-size:1.7rem;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0;max-width:62ch}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.card[data-k="a"]{border-top:3px solid var(--a)} .card[data-k="b"]{border-top:3px solid var(--b)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.name{font-weight:700;border:none;background:transparent;color:var(--fg);font:inherit;font-weight:700;font-size:1.05rem;padding:2px 0;border-bottom:1px dashed var(--line);min-width:0;width:100%}
+.name:focus{outline:none;border-bottom-color:var(--fg)}
+.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+label{display:grid;gap:4px;font-size:.78rem;color:var(--muted);letter-spacing:.03em}
+input[type=number]{font-family:var(--mono);font-size:1rem;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+input[type=number]:focus-visible,.name:focus-visible,.toggle input:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.out{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-variant-numeric:tabular-nums}
+.out div{border:2px solid transparent}
+.out div.sel{border-color:currentColor}
+.card[data-k="a"] .out div.sel{color:var(--a)} .card[data-k="b"] .out div.sel{color:var(--b)}
+.out div.sel span{color:inherit}
+.tails{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:4px 10px 10px;font-size:.85rem;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{display:block;padding:6px 12px;cursor:pointer;color:var(--fg);font-size:.85rem;letter-spacing:0}
+.seg input:checked+label{background:var(--fg);color:var(--bg)}
+.seg input:focus-visible+label{outline:2px solid var(--fg);outline-offset:-3px}
+.out div{background:var(--bg);border-radius:6px;padding:8px 10px}
+.out span{display:block;font-size:.72rem;color:var(--muted);letter-spacing:.05em}
+.out b{font-family:var(--mono);font-size:1.35rem;font-weight:500}
+.card[data-k="a"] .z{color:var(--a)} .card[data-k="b"] .z{color:var(--b)}
+.formula{font-family:var(--mono);font-size:.8rem;color:var(--muted);overflow-x:auto;white-space:nowrap}
+.toggle{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);cursor:pointer;white-space:nowrap}
+.card.off .fields,.card.off .out,.card.off .formula{opacity:.35;pointer-events:none}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 8px 6px}
+.chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.82rem;color:var(--muted);padding:4px 10px 0}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px}
+.verdict{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;max-width:none}
+.verdict p{margin:0}
+.verdict strong.a{color:var(--a)} .verdict strong.b{color:var(--b)}
+@media (max-width:420px){.fields{grid-template-columns:1fr 1fr}.fields label:last-child{grid-column:span 2}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>常態分配與 Z 分數</h1>
+    <p class="sub">調整平均數 μ 與標準差 σ，看曲線怎麼變；輸入原始分數 x，得到 z 分數與百分等級。兩組疊在同一張圖上比較。</p>
+  </header>
+
+  <section class="groups">
+    <div class="card" data-k="a">
+      <div class="head"><input class="name" id="nameA" value="例 A：國文考試" aria-label="A 組名稱"></div>
+      <div class="fields">
+        <label>平均數 μ<input type="number" id="muA" value="70" step="1"></label>
+        <label>標準差 σ<input type="number" id="sdA" value="10" step="0.5" min="0.1"></label>
+        <label>原始分數 x<input type="number" id="xA" value="85" step="1"></label>
+      </div>
+      <div class="out">
+        <div><span>Z 分數</span><b class="z" id="zA">–</b></div>
+        <div class="lt"><span>左尾 P(X ≤ x)</span><b id="pA">–</b></div>
+        <div class="rt"><span>右尾 P(X ≥ x)</span><b id="rA">–</b></div>
+      </div>
+      <div class="formula" id="fA"></div>
+    </div>
+
+    <div class="card" data-k="b" id="cardB">
+      <div class="head">
+        <input class="name" id="nameB" value="例 B：數學考試" aria-label="B 組名稱">
+        <label class="toggle"><input type="checkbox" id="showB" checked>比較</label>
+      </div>
+      <div class="fields">
+        <label>平均數 μ<input type="number" id="muB" value="60" step="1"></label>
+        <label>標準差 σ<input type="number" id="sdB" value="15" step="0.5" min="0.1"></label>
+        <label>原始分數 x<input type="number" id="xB" value="80" step="1"></label>
+      </div>
+      <div class="out">
+        <div><span>Z 分數</span><b class="z" id="zB">–</b></div>
+        <div class="lt"><span>左尾 P(X ≤ x)</span><b id="pB">–</b></div>
+        <div class="rt"><span>右尾 P(X ≥ x)</span><b id="rB">–</b></div>
+      </div>
+      <div class="formula" id="fB"></div>
+    </div>
+  </section>
+
+  <section class="chart">
+    <div class="tails">
+      <span>圖中著色：</span>
+      <div class="seg" role="radiogroup" aria-label="著色的尾端">
+        <input type="radio" name="tail" id="tailL" value="left" checked><label for="tailL">左尾 P(X ≤ x)</label>
+        <input type="radio" name="tail" id="tailR" value="right"><label for="tailR">右尾 P(X ≥ x)</label>
+      </div>
+    </div>
+    <svg id="svg" viewBox="0 0 900 420" role="img" aria-label="常態分配曲線"></svg>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="verdict"><p id="verdict"></p></section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t=1/(1+0.3275911*x);
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y;}
+const cdf=z=>0.5*(1+erf(z/Math.SQRT2));
+const pdf=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2)/(s*Math.sqrt(2*Math.PI));
+const fmt=(n,d=2)=>(Math.round(n*10**d)/10**d).toFixed(d);
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent&&parent.appendChild(e);return e;}
+
+function read(k){
+  const mu=parseFloat($("mu"+k).value), sd=parseFloat($("sd"+k).value), x=parseFloat($("x"+k).value);
+  const ok=isFinite(mu)&&isFinite(sd)&&sd>0&&isFinite(x);
+  return {k,mu,sd,x,ok,name:$("name"+k).value||k};
+}
+
+function niceStep(range){const raw=range/8,p=10**Math.floor(Math.log10(raw));const m=raw/p;return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p;}
+
+function draw(){
+  const showB=$("showB").checked;
+  const tail=$("tailR").checked?"right":"left";
+  $("cardB").classList.toggle("off",!showB);
+  const groups=[read("A")].concat(showB?[read("B")]:[]).filter(g=>g.ok);
+
+  for(const k of ["A","B"]){
+    const g=read(k);
+    if(!g.ok){$("z"+k).textContent="–";$("p"+k).textContent="–";$("f"+k).textContent=g.sd<=0?"σ 必須大於 0":"請輸入數字";continue;}
+    const z=(g.x-g.mu)/g.sd; g.z=z;
+    $("z"+k).textContent=(z>=0?"+":"")+fmt(z);
+    $("p"+k).textContent=fmt(cdf(z),4);
+    $("r"+k).textContent=fmt(1-cdf(z),4);
+    const card=$("p"+k).closest(".card");
+    card.querySelector(".lt").classList.toggle("sel",tail==="left");
+    card.querySelector(".rt").classList.toggle("sel",tail==="right");
+    $("f"+k).textContent=`z = (${g.x} − ${g.mu}) ÷ ${g.sd} = ${fmt(z)}`;
+  }
+
+  const svg=$("svg");svg.innerHTML="";
+  if(!groups.length)return;
+  const W=900,H=440,L=64,R=20,T=24,B=36+24*groups.length;
+  groups.forEach(g=>g.z=(g.x-g.mu)/g.sd);
+  let lo=Math.min(...groups.map(g=>Math.min(g.mu-4*g.sd,g.x))), hi=Math.max(...groups.map(g=>Math.max(g.mu+4*g.sd,g.x)));
+  const pad=(hi-lo)*0.03; lo-=pad; hi+=pad;
+  const ymax=Math.max(...groups.map(g=>pdf(g.mu,g.mu,g.sd)))*1.12;
+  const sx=v=>L+(v-lo)/(hi-lo)*(W-L-R), sy=v=>H-B-v/ymax*(H-T-B);
+  const css=getComputedStyle(document.documentElement);
+  const c=n=>css.getPropertyValue(n).trim();
+
+  // grid & x axis
+  const step=niceStep(hi-lo);
+  for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step){
+    el("line",{x1:sx(v),x2:sx(v),y1:T,y2:H-B,stroke:c("--line"),"stroke-width":1},svg);
+    const t=el("text",{x:sx(v),y:H-B+20,"text-anchor":"middle","font-size":13,fill:c("--muted"),"font-family":"IBM Plex Mono, monospace"},svg);t.textContent=+v.toFixed(6);
+  }
+  el("line",{x1:L,x2:W-R,y1:H-B,y2:H-B,stroke:c("--muted"),"stroke-width":1.2},svg);
+  const xl=el("text",{x:L-10,y:H-B+20,"text-anchor":"end","font-size":13,"font-weight":600,fill:c("--muted")},svg);xl.textContent="x";
+  // z 軸：每組一列，標出 μ±kσ 對應的 z 值
+  groups.forEach((g,i)=>{
+    const col=c(g.k==="A"?"--a":"--b"), yy=H-B+44+i*24;
+    const lab=el("text",{x:L-10,y:yy,"text-anchor":"end","font-size":13,"font-weight":600,fill:col},svg);lab.textContent="z("+g.k+")";
+    for(let k=-4;k<=4;k++){const v=g.mu+k*g.sd;if(v<lo||v>hi)continue;
+      el("line",{x1:sx(v),x2:sx(v),y1:yy-15,y2:yy-11,stroke:col,"stroke-width":1.5},svg);
+      const t=el("text",{x:sx(v),y:yy,"text-anchor":"middle","font-size":12,fill:col,"font-family":"IBM Plex Mono, monospace"},svg);t.textContent=k>0?"+"+k:k;}
+  });
+  // y ticks
+  const ys=niceStep(ymax)*1;
+  for(let v=0;v<=ymax;v+=ys){
+    const t=el("text",{x:L-8,y:sy(v)+4,"text-anchor":"end","font-size":11,fill:c("--muted"),"font-family":"IBM Plex Mono, monospace"},svg);t.textContent=v===0?"0":v.toPrecision(2);
+  }
+  const yl=el("text",{x:14,y:T+4,"font-size":12,fill:c("--muted")},svg);yl.textContent="機率密度";
+
+  const N=240;
+  groups.forEach((g,i)=>{
+    const col=c(g.k==="A"?"--a":"--b"), fill=c(g.k==="A"?"--a-fill":"--b-fill");
+    // shaded area up to x
+    const xc=Math.min(Math.max(g.x,lo),hi);
+    const x0=tail==="left"?lo:xc, x1=tail==="left"?xc:hi;
+    let d=`M${sx(x0)},${sy(0)}`;
+    for(let j=0;j<=N;j++){const v=x0+(x1-x0)*j/N;d+=` L${sx(v)},${sy(pdf(v,g.mu,g.sd))}`;}
+    d+=` L${sx(x1)},${sy(0)} Z`;
+    el("path",{d,fill},svg);
+    // curve
+    let p="";
+    for(let j=0;j<=N;j++){const v=lo+(hi-lo)*j/N;p+=(j?" L":"M")+sx(v)+","+sy(pdf(v,g.mu,g.sd));}
+    el("path",{d:p,fill:"none",stroke:col,"stroke-width":2.5},svg);
+    // mean line
+    el("line",{x1:sx(g.mu),x2:sx(g.mu),y1:sy(0),y2:sy(pdf(g.mu,g.mu,g.sd)),stroke:col,"stroke-width":1,"stroke-dasharray":"4 4"},svg);
+    // ±1σ ticks
+    [-2,-1,1,2].forEach(k=>{const v=g.mu+k*g.sd;if(v<lo||v>hi)return;
+      el("line",{x1:sx(v),x2:sx(v),y1:sy(0),y2:sy(0)-6,stroke:col,"stroke-width":1.5},svg);});
+    // x marker
+    const yx=sy(pdf(g.x,g.mu,g.sd));
+    el("line",{x1:sx(g.x),x2:sx(g.x),y1:sy(0),y2:T+8+i*36,stroke:col,"stroke-width":2},svg);
+    el("circle",{cx:sx(g.x),cy:yx,r:5,fill:col,stroke:c("--surface"),"stroke-width":2},svg);
+    const pr=tail==="left"?cdf(g.z):1-cdf(g.z);
+    const lab=`x=${g.x}  z=${(g.z>=0?"+":"")+fmt(g.z)}  ${tail==="left"?"左尾":"右尾"}=${fmt(pr,4)}`;
+    const right=sx(g.x)>W-330;
+    const t=el("text",{x:sx(g.x)+(right?-8:8),y:T+20+i*36,"text-anchor":right?"end":"start","font-size":14,"font-weight":600,fill:col,"font-family":"IBM Plex Mono, monospace"},svg);t.textContent=lab;
+  });
+
+  // legend
+  $("legend").innerHTML=groups.map(g=>`<span><i style="background:var(--${g.k.toLowerCase()})"></i>${g.name}（μ=${g.mu}, σ=${g.sd}）</span>`).join("")+`<span>色塊＝${tail==="left"?"左尾（x 以下）":"右尾（x 以上）"}面積；虛線＝平均數；下方 z 列＝原始分數對應的 z 值</span>`;
+
+  // verdict
+  const A=read("A");A.z=(A.x-A.mu)/A.sd;
+  let txt="";
+  if(!A.ok){txt="請先填好 A 組的數值。";}
+  else if(!showB||!read("B").ok){txt=`<strong class="a">${A.name}</strong> 的 ${A.x} 分，z = ${fmt(A.z)}，贏過約 ${fmt(cdf(A.z)*100,1)}% 的人。`;}
+  else{
+    const Bg=read("B");Bg.z=(Bg.x-Bg.mu)/Bg.sd;
+    const diff=A.z-Bg.z;
+    const better=Math.abs(diff)<0.005?null:(diff>0?A:Bg);
+    txt=`原始分數：${A.name} ${A.x} 分、${Bg.name} ${Bg.x} 分。換成 z 分數後，<strong class="a">${fmt(A.z)}</strong> 對 <strong class="b">${fmt(Bg.z)}</strong>，`+
+      (better?`<strong class="${better.k.toLowerCase()}">${better.name}</strong> 在所屬群體中的相對位置較高（百分等級 ${fmt(cdf(better.z)*100,1)}% 對 ${fmt(cdf((better===A?Bg:A).z)*100,1)}%）。`:`兩者的相對位置相同。`)+
+      (Math.sign(A.x-Bg.x)!==Math.sign(diff)&&better?" 原始分數較高的一方，相對位置反而較低。":"");
+  }
+  $("verdict").innerHTML=txt;
+}
+
+document.querySelectorAll("input").forEach(i=>i.addEventListener("input",draw));
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+draw();
+</script>
+
+</body></html>
